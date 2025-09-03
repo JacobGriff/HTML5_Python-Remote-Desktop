@@ -1,53 +1,93 @@
 const ws = new WebSocket("ws://localhost:8765");
+const clientName = "WebClient"
 
 var lastSend = Date.now();
 
-function sendCommand(command, data){
-    var msg = {client: "WebClient", command: command, data: data}
+var initialized = false;
+
+function openClient(id){
+    window.open("Client/index.html?id=" + id, "_self");
+}
+
+function initServer(){
+    var msg = {client: clientName, command: "Init", data: null, target: null}
     ws.send(JSON.stringify(msg));
+}
+
+function getClients(){
+    var msg = {client: clientName, command: "GetClients", data: null, target: null}
+    ws.send(JSON.stringify(msg));
+}
+
+function displayClients(clients){
+    console.log("Do something here");
+
+    var clientCount = clients.length;
+    if(clientCount > 0){
+
+        clients.forEach(client => {
+
+            var table = client;
+            console.log("Creating new client div");
+
+            var clientHolder = document.getElementById("clientHolder");
+            var prefabClient = document.getElementById("prefabClient");
+            var newClient = prefabClient.cloneNode(true);
+            clientHolder.appendChild(newClient);
+
+            //Set vars
+            var id = table.Id;
+            var info = table.Info;
+            var screenshot = JSON.parse(table.Screenshot);
+            
+            var newClient_id = newClient.querySelector(".clientId");
+            newClient.id = id;
+            newClient_id.textContent = id;
+
+            var newClient_info = newClient.querySelector(".clientInfo");
+            newClient_info.textContent = info;
+
+            if(screenshot != null){
+                var newClient_screenshot = newClient.querySelector(".clientScreenshot");
+                newClient_screenshot.src = "data:image/png;base64," + screenshot;
+            }
+        });
+        
+    } else{
+
+    }
+}
+
+function pickClient(){
+
 }
 
 
 ws.onopen = () => {
-  console.log("Connected to server");
-  sendCommand("Init", "Web Client connected")
+  console.log("Connected to server. Initializing.");
+  initServer();
 };
 
 ws.onmessage = (event) => {
 
     var table = JSON.parse(event.data);
-    //console.log("Message from server: ", table);
+
+
+    console.log("Message from server: ", table);
 
     var data = table.data;
     var command = table.command;
 
-    if(command == "Info"){
-        console.log("Setting cpu to: " + data.Cpu)
-        document.getElementById("Cpu-Usage").textContent = "CPU: " + data.Cpu + "%";
-        document.getElementById("Ram-Usage").textContent = "RAM: " + data.Memory + "%";
-    }
-
-    else if (command === "Image") {
-        // Create an image element
-        const img = document.getElementById("ScreenshotImg");
-        img.src = "data:image/png;base64," + data;
-        img.alt = "Server Image";
-        //img.width = 400; // optional
-
-        var currentTime = Date.now();
-        var diff = (currentTime - lastSend);
-        
-        document.getElementById("Delay").textContent = "Delay: " + diff;
-
-        lastSend = currentTime;
+    //Setup commands
+    if(command == "Init"){
+        initialized = data;
+        console.log("Initialized: " + initialized);
+        if(initialized){
+            getClients();
+        } else{
+            console.error("Initialization failed...");
+        }
+    } else if(command == "GetClients"){
+        displayClients(data);
     }
 };
-
-
-document.getElementById("getInfo").addEventListener("click", () => {
-    sendCommand("Info", "None");
-});
-
-document.getElementById("getScreenshot").addEventListener("click", () => {
-    sendCommand("ToggleStream", "None");
-});

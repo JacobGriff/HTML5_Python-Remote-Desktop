@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1 id="Title">WebSocket Client</h1>
+  <div id="Screenshot">
+    <div id="ScreenshotImgContainer">
+        <img id="ScreenshotImg" src="" alt="">
+    </div>
+    
+    <div class="slidecontainer">
+        <input type="range" min="10" max="100" value="50" class="slider" id="myRange">
+        <div class="controls-line">
+            <p>Video Scale: <span id="demo"></span></p>
+            <p id="Delay">Delay: </p>
+            <button id="getScreenshot">View Screen</button>
+        </div>
+    </div>
+    
+  </div>
+  <div id="info">
+    <h1 id="Cpu-Usage">CPU: ?%</h1> <br>
+    <h1 id="Ram-Usage">RAM: ?%</h1>
+  </div>
+  
+  <button id="getInfo">Show hardware info</button>
+  <script src="app.js"></script>
+  <script src="features.js"></script>
+</body>
+</html>

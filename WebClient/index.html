@@ -1,34 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">  
   <title>WebSocket Demo</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1 id="Title">WebSocket Client</h1>
-  <div id="Screenshot">
-    <div id="ScreenshotImgContainer">
-        <img id="ScreenshotImg" src="" alt="">
-    </div>
-    
-    <div class="slidecontainer">
-        <input type="range" min="10" max="100" value="50" class="slider" id="myRange">
-        <div class="controls-line">
-            <p>Video Scale: <span id="demo"></span></p>
-            <p id="Delay">Delay: </p>
-            <button id="getScreenshot">View Screen</button>
+  <h1 id="Title">Available Clients</h1>
+  <body>
+    <div class="clientHolder" id="clientHolder">
+      
+      <div class="client" id="prefabClient">
+        <h4 class="clientId">ID</h4>
+        <img src="defaultScreenshot.png" alt="screenshot" class="clientScreenshot">
+        <div class="container">
+          <p class="clientInfo">Ram: 100% | CPU: 50%</p>
+          <button onclick="openClient('1234')" class="clientOpen">Open</button>
         </div>
+      </div>
+
     </div>
     
-  </div>
-  <div id="info">
-    <h1 id="Cpu-Usage">CPU: ?%</h1> <br>
-    <h1 id="Ram-Usage">RAM: ?%</h1>
-  </div>
-  
-  <button id="getInfo">Show hardware info</button>
+  </body>
+
   <script src="app.js"></script>
-  <script src="features.js"></script>
 </body>
 </html>
