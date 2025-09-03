@@ -31,6 +31,8 @@
        *  All Toggles (This gets sent to the web client to visually update toggle buttons so you know if its sending realtime updates on specific things like screen sharing!)
      * Web Client (HTML5/JS Client that requests data from Remote Desktop Clients):
        * ClientID (Potentially target, depends how its programmed for which client you're viewing. I may just do it based on web url...)
+       * WebSocket
+       * ConnectedID (The ID of the desktop client so we can loop through all web clients and send data to any connected to this specific client)
        * Potentially more data as this gets more complicated
       
   2. Listens to command requests from web clients and forwards request to relevant remote desktop client
@@ -52,6 +54,7 @@ Uses WebSockets to communicate with the server:
     * Can optimize by not including target but instead sending information once on the first connection to the client when you visit its portal page
   * Sends global requests for all clients:
       * Home page viewing, same command structure, target can be null to get all clients to send info, then the page renders the info based on lowest to highest ID or if we incorporate sorting
+  * Could incorporate a timeout system and send anti-timeout messages periodically, otherwise we just make sure socket connection exists and if it doesnt remove from map of web clients 
     
 ### Python-Based Client:
 Stores which toggles are enabled and sends data at a fixed rate to the server
