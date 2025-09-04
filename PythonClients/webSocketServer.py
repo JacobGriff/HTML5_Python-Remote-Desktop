@@ -5,6 +5,7 @@ import asyncio
 import traceback
 import uuid
 import pyautogui
+import websockets.asyncio.server
 
 from websockets.asyncio.server import serve
 
@@ -13,31 +14,49 @@ from websockets.asyncio.server import serve
 
 # Client class holds all the variables last sent by the client so we can update new web clients, and check for duplicate data
 class Client:
+    # System info
 
-    #Data
-    info = None
-    screenShot = None
-
-    #Toggles
+    # Toggles always off at the start
     screenSharing = False
 
-    def __init__(self, clientid, socket):
-        self.clientId = str(clientid)
+    def __init__(self, socket, clientid, system, version, architecture, resources, screenshot):
         self.socket = socket
+        self.clientId = str(clientid)
+        self.system = str(system)
+        self.version = str(version)
+        self.architecture = str(architecture)
+        self.resources = resources
+        self.screenShot = screenshot
+
+    def get_info(self):
+        return self.system + " " + self.version + " " + self.architecture
+
+    def get_all_data(self):
+        return {"system": self.system, "version": self.version, "architecture": self.architecture,
+                "resources": self.resources, "screenshot": self.screenShot}
+
+    def id_matches(self, other_id):
+        return self.clientId == other_id
+
+    def socket_matches(self, other_socket):
+        return self.socket == other_socket
 
 
 class WebClient:
-    connectedId = None
 
-    def __init__(self, clientid, socket):
-        self.clientId = str(clientid)
+    def __init__(self, socket, clientid, pythonclientid):
         self.socket = socket
+        self.clientId = str(clientid)
+        self.pythonClientId = pythonclientid
 
     def socketMatches(self, other_socket):
         return self.socket == other_socket
 
+    def python_client_matches(self, other_clientid):
+        return self.pythonClientId == other_clientid
 
-def getScreenshot():
+
+def get_screenshot():
     # Take screenshot
     screenshot = pyautogui.screenshot()
 
@@ -46,23 +65,20 @@ def getScreenshot():
         screenshot.save(buffer, format="JPEG", quality=70)
         img_bytes = buffer.getvalue()
 
-    # Convert to Base64 string
+    # Convert to Base64 string so it can be json dumped in send_msg
     img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-
     return json.dumps(img_b64)
+
 
 # This acts as the intermediary between the python client (machine) and the web client (browser)
 
 pythonClients = list()
 
-#Add fake client for testing
-fakeClient = Client("1234", None)
-fakeClient.screenShot = getScreenshot()
-fakeClient.info = "CPU: 100% | RAM: 50%"
+# Add fake client for testing
+fakeClient = Client(None, "Example PC", "Windows", "10", "AMDx64", {"CPU": "100", "RAM": "50%"}, get_screenshot())
 pythonClients.append(fakeClient)
 
 webClients = list()
-
 
 
 def getWebClient(socket) -> WebClient:
@@ -73,29 +89,125 @@ def getWebClient(socket) -> WebClient:
     return None
 
 
+def getPythonClientIndex(id):
+    for index, client in enumerate(pythonClients):
+        if client.id_matches(id):
+            return index
+
+    return None
+
+
+def getPythonClientFromId(id) -> Client:
+    for client in pythonClients:
+        if client.id_matches(id):
+            return client
+
+    return None
+
+
+def getPythonClientSocket(id) -> websockets.asyncio.server.ServerConnection:
+    matchedSocket = None
+
+    for client in pythonClients:
+        if client.id_matches(id):
+            matchedSocket = client.socket
+
+    return matchedSocket
+
+
+def getPythonClientFromSocket(websocket) -> Client:
+    for pythonClient in pythonClients:
+        if pythonClient.socket_matches(websocket):
+            return pythonClient
+
+    return None
+
+
+def getConnectedWebClientSockets(websocket):
+    global webClients
+    activeWebClients = list()
+    connectedWebClients = list()
+
+    # Get python client from web socket since we dont want to store target sockets in every web client. We could, but dont need big data stored like that
+    pythonClient = getPythonClientFromSocket(websocket)
+
+    if pythonClient is None:
+        return connectedWebClients
+
+    pythonClientId = pythonClient.clientId
+
+    # Get all web clients whos target is this
+    # Also confirm web client is still active! Otherwise clean up
+
+    for webClient in webClients:
+        # Make sure socket is available!
+        socket = webClient.socket
+        socketClosed = socket.state == 3
+
+        # Don't add to new array
+        if socketClosed:
+            print("Found closed web client")
+            continue
+
+        #Add live clients to array
+        activeWebClients.append(webClient)
+
+        #If it matches return
+        if webClient.python_client_matches(pythonClientId):
+            connectedWebClients.append(webClient.socket)
+
+    webClients = activeWebClients
+
+    return connectedWebClients
+
+
 def getHubInfo() -> list:
     allClients = list()
     for client in pythonClients:
-        data = {"Id": client.clientId, "Info": client.info, "Screenshot": client.screenShot}
+        data = {"Id": client.clientId, "Info": client.get_info(), "Resources": client.resources,
+                "Screenshot": client.screenShot}
         allClients.append(data)
 
     return allClients
 
 
 async def send_msg(websocket, command, data):
+    #Returns true if it was a success, and false if fail. This way we can clean up closed sockets if it made it through all other checks.
+
+
     # Identifies the sender, the command referenced, and the data passed
 
     msg = {"client": "Server", "command": command, "data": data}
-    print("Sending: " + str(msg))
+    print("Sending: " + str(msg)[:200])
+
+    # Make sure socket is active
+    socketClosed = websocket.state == 3
+    if socketClosed:
+        print("Error, this socket is in a closed state. Aborting. Please perform checks before passing sockets here.")
+        return False
 
     await websocket.send(json.dumps(msg))
+    return True
 
 
-async def handleWebClientRequest(websocket, client, command, data):
+async def send_msg_to_all_web_clients(pythonClientSocket, command, data):
+    #This gets only web sockets that are connected to this python client
+    #Additionally, it checks for any closed web sockets and cleans them up
+    webClientSockets = getConnectedWebClientSockets(pythonClientSocket)
+    for webClientSocket in webClientSockets:
+        await send_msg(webClientSocket, command, data)
+
+
+async def handleWebClientRequest(websocket, command, data):
     if command == "Init":
+        print("Establishing Web Client Connection")
         clientUuid = uuid.uuid4()
-        webClient = WebClient(clientUuid, websocket)
+        pythonClient = data
+        webClient = WebClient(websocket, clientUuid, pythonClient)
         webClients.append(webClient)
+
+        print(f"Total web clients {len(webClients)}")
+
         # Maybe add something else
         await send_msg(websocket, "Init", True)
         return
@@ -103,6 +215,7 @@ async def handleWebClientRequest(websocket, client, command, data):
     # Get the web client based on websocket
     webClient = getWebClient(websocket)
 
+    # Testing client or bad data send
     if webClient is None:
         print("This shouldn't be none...")
         return
@@ -128,8 +241,75 @@ async def handleWebClientRequest(websocket, client, command, data):
 
         return
 
-        # Otherwise send command to python client
-    # targetClient = pythonClient
+    # Pull all saved data for its client and send back to web client. Meant for first connection. Doesn't send to python client or other web clients.
+    if command == "PullSaved":
+        print("Sending back all saved data")
+        pythonClient = getPythonClientFromId(webClient.pythonClientId)
+        if pythonClient is not None:
+            data = pythonClient.get_all_data()
+            await send_msg_to_all_web_clients(pythonClient.socket, "PullSaved", data)
+            return
+
+    # Otherwise send command to python client
+
+    print("Sending request to python client")
+
+    pythonClientSocket = getPythonClientSocket(webClient.pythonClientId)
+
+    socketClosed = websocket.state == 3
+
+    if pythonClientSocket is not None and not socketClosed:
+        await send_msg(pythonClientSocket, command, data)
+    else:
+        print(f"Failed, not connected to python client. Python client id: {webClient.pythonClientId} "
+              f"| Error: {'Socket is null' if pythonClientSocket is None else 'Socket is closed'}")
+
+
+async def handlePythonClientRequest(clientWebSocket, command, data):
+    client = getPythonClientFromSocket(clientWebSocket)
+
+    if command == "Init":
+        print("Establishing client connection")
+        print(f"Data: {str(data)[:200]}")
+
+        # Check for existing client with this id
+        id = data["node"]
+
+        # Existing client reconnected. Update vars
+        if client is not None:
+            print("Client already exists. Updating data")
+            client.resources = data["resources"]
+            client.screenShot = json.loads(data["screenshot"])
+            client.socket = clientWebSocket
+        else:
+            # Create new client
+            client = Client(clientWebSocket, id, data["system"], data["release"], data["machine"], data["resources"],
+                            json.loads(data["screenshot"]))
+            pythonClients.append(client)
+
+        print(f"Total clients: {len(pythonClients)}")
+
+        # On success send init back to the python client, and send all data to web clients trying to view it
+        await send_msg(clientWebSocket, "Init", True)
+
+        data = client.get_all_data()
+        await send_msg_to_all_web_clients(clientWebSocket, "PullSaved", data)
+
+        return
+
+    # Now for whatever command entered, update vars to create save state!
+
+    print("Updating values broskie")
+
+    if command == "Screenshot":
+        client.screenShot = data
+    elif command == "Resources":
+        client.resources = data
+        print("Updated resources data")
+
+    # Other commands to send to all web clients
+
+    await send_msg_to_all_web_clients(clientWebSocket, command, data)
 
 
 async def handler(websocket):
@@ -155,10 +335,14 @@ async def handler(websocket):
             command = receivedMap["command"]
             data = receivedMap["data"]
 
-            print(f"Received map: {receivedMap}")
+            dataStr = str(data)
+
+            print(f"Client: [ {client} | Command: {command} | Data {dataStr[:500]} ] ")
 
             if client == "WebClient":
-                await handleWebClientRequest(websocket, client, command, data)
+                await handleWebClientRequest(websocket, command, data)
+            elif client == "PyClient":
+                await handlePythonClientRequest(websocket, command, data)
 
     except Exception as e:
         print(f"Connection closed: {repr(e)}")  # exact type + message
@@ -166,6 +350,8 @@ async def handler(websocket):
 
 
 async def main():
+    print("Main Started")
+
     async with serve(handler, "localhost", 8765):
         print("Server running on ws://localhost:8765")
         await asyncio.Future()  # run forever
