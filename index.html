@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Demo</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <h1 id="Title">WebSocket Client</h1>
+  <div id="Screenshot">
+    <div id="ScreenshotImgContainer">
+        <img id="ScreenshotImg" src="" alt="">
+    </div>
+    
+    <div class="slidecontainer">
+        <input type="range" min="10" max="100" value="50" class="slider" id="myRange">
+        <div class="controls-line">
+            <p>Video Scale: <span id="demo"></span></p>
+            <p id="Delay">Delay: </p>
+            <button id="getScreenshot">View Screen</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="resources">
+    <div class="resourcesGridContainer">
+      <h1 id="Cpu-Usage">CPU: 50%</h1>
+      <h1 id="Ram-Usage">RAM: 99%</h1>
+    </div>
+    <button id="getResources">Get resources</button>
+  </div>
+
+  <!--
+    Scrollable container grid that shows all files, along with an open and download button
+    Always constant width but height is adjustable with a minimum
+
+    Top needs to be current directory like the title of a grid
+    Main body should be the grid items one long for name (scrollable) and then options to open and download
+
+    Grid formatting:
+    Each row is 3 items
+    File name takes up 2 columns worth
+    Open and Download are 1 column
+  -->
+  <div id="fileViewer">
+    <div class="FileHeader">Files</div>
+    <div class="FileDirectory">
+      <p>Dir | C:\Users\Void\OneDrive\Desktop</p>
+      <button class="DirectoryBack material-icons">undo</button>
+    </div>
+    <br>
+    <div class="gridScroller">
+      <div class="gridContainer">
+
+        <div class="fileName">NormalFile.png</div>
+        <div class="fileOpen">Open</div>
+        <div class="fileDownload">Download</div>
+
+        <div class="fileName">NormalFile.png</div>
+        <div class="fileOpen">Open</div>
+        <div class="fileDownload">Download</div>
+
+        <div class="fileName">NormalFile.png</div>
+        <div class="fileOpen">Open</div>
+        <div class="fileDownload">Download</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="CommandLine">
+    <h1>Command Line</h1>
+    <div id="CommandLineContainer">
+      <div id="CommandLineEntries">
+        <div id="CommandLineScroller">
+        <p>> C:\Users\Void>echo hello world</p>
+        <p>> hello world</p>
+        <p>> hello world</p>
+        <p>> hello world</p>
+        <p>> hello world</p>
+        <p>> hello world</p>
+        <p>> hello world</p>
+        <p>> hello world</p>
+        </div>
+      </div>
+      <div id="CommandLinePrompt">
+        <input type="text">
+        <button>Enter</button>
+      </div>
+    </div>
+  </div>
+  
+
+  <script src="app.js"></script>
+  <script src="features.js"></script>
+</body>
+</html>
