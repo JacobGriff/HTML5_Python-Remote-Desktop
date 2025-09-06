@@ -46,24 +46,12 @@
   <div id="fileViewer">
     <div class="FileHeader">Files</div>
     <div class="FileDirectory">
-      <p>Dir | C:\Users\Void\OneDrive\Desktop</p>
-      <button class="DirectoryBack material-icons">undo</button>
+      <span>Dir | </span><p id="CurrentDirectory">C:\Users\Void\OneDrive\Desktop</p>
+      <button class="DirectoryBack material-icons" id="FileBackButton">undo</button>
     </div>
     <br>
     <div class="gridScroller">
-      <div class="gridContainer">
-
-        <div class="fileName">NormalFile.png</div>
-        <div class="fileOpen">Open</div>
-        <div class="fileDownload">Download</div>
-
-        <div class="fileName">NormalFile.png</div>
-        <div class="fileOpen">Open</div>
-        <div class="fileDownload">Download</div>
-
-        <div class="fileName">NormalFile.png</div>
-        <div class="fileOpen">Open</div>
-        <div class="fileDownload">Download</div>
+      <div id="fileViewerContainer" class="gridContainer">
       </div>
     </div>
   </div>
@@ -88,6 +76,17 @@
         <button>Enter</button>
       </div>
     </div>
+  </div>
+
+  <div class="hidden" id="presets">
+    <div id="fileViewerPresetName" class="fileName">NormalFile.png</div>
+        <div id="fileViewerPresetSize" class="fileSize">132MB</div>
+        <div id="fileViewerPresetOpen" class="fileOpen"><button>Open</button></div>
+        <div id="fileViewerPresetDownload" class="fileDownload"><button>Download</button></div>
+
+        <div id="drivePresetName" class="fileDriveName">C:</div>
+        <div id="drivePresetStorage" class="fileDriveStorage">125GB/2TB</div>
+        <div id="drivePresetOpen" class="fileOpen"><button>Open</button></div>
   </div>
   
 

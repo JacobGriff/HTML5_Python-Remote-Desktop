@@ -107,7 +107,7 @@
   max-width: 95%;
   margin: 10px auto auto auto;
   /*3 Columns*/
-  grid-template-columns: 3fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
   background-color: lightgray;
   padding: 10px;
 
@@ -147,12 +147,15 @@
   margin: 10px 0 0 20px;
   
   display: flex;
-  gap: 30px;
 }
 
-.FileDirectory > p{
-  padding: 0;
+.FileDirectory > p, .FileDirectory > span{
+  padding-right: 10px;
   margin: 0;
+}
+
+.FileDirectory button{
+  margin-left: 20px;
 }
 
 .DirectoryBack{
@@ -172,14 +175,45 @@
   margin-top: 10px;
 }
 
-.fileName{
+.fileName, .fileSize{
   text-align: left;
 }
 
+.fileName{
+  grid-column: 1 / span 3;
+}
 
+.fileDriveName{
+  grid-column: 1 / span 2;
+}
+
+.fileDriveStorage{
+  grid-column: 3 / span 3;
+}
+
+.fileOpen button, .fileDownload button{
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+
+  font-size: large;
+}
+
+.fileOpen, .fileDownload{
+  overflow: hidden;
+  margin: 0;
+  padding: 5px;
+}
+
+
+/* Basic html css */
 
 #Title{
     text-align: center;
+}
+
+.hidden{
+  visibility: hidden;
 }
 
 
